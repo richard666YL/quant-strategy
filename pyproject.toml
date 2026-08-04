@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "jupyter>=1.1.1",
     "matplotlib>=3.11.1",
+    "moomoo-api>=10.9.6908",
     "numpy>=2.5.1",
     "pandas>=3.0.5",
     "yfinance>=1.5.2",

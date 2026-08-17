@@ -1,36 +1,36 @@
-from quant_strategy.broker.moomoo_position import get_current_position
-from quant_strategy.execution.executor import execute_trade
+from quant_strategy.broker.moomoo_orders import (
+    get_pending_orders,
+)
+from quant_strategy.broker.moomoo_position import (
+    get_current_position,
+)
+from quant_strategy.execution.executor import (
+    execute_trade,
+)
 from quant_strategy.strategies.ma_target_position import (
     calculate_ma_target_position,
 )
-from quant_strategy.trader.decision import decide_action
-from quant_strategy.utils.data_loader import load_daily_data
+from quant_strategy.trader.decision import (
+    decide_action,
+)
+from quant_strategy.utils.data_loader import (
+    load_daily_data,
+)
 
 
 # ============================================================
 # 配置
 # ============================================================
 
-# 历史数据使用的 ticker
 DATA_TICKER = "QQQ"
-
-# Moomoo API 使用的股票代码
 TRADE_SYMBOL = "US.QQQ"
 
-# MA 参数
 SHORT_WINDOW = 20
 LONG_WINDOW = 50
 
-# 每次交易数量
 ORDER_QUANTITY = 1
 
 # 总交易开关
-#
-# False = 只计算策略和交易决策，不允许提交订单
-# True  = 允许进入 Execution Engine
-#
-# 注意：
-# executor.py 目前仍然锁定为 SIMULATE 模拟交易
 TRADING_ENABLED = False
 
 
@@ -41,63 +41,130 @@ TRADING_ENABLED = False
 def main() -> None:
 
     # --------------------------------------------------------
-    # 1. 读取 QQQ 历史日线数据
+    # 1. 历史数据
     # --------------------------------------------------------
 
-    data = load_daily_data(DATA_TICKER)
-
-
-    # --------------------------------------------------------
-    # 2. 根据 MA20 / MA50 生成目标仓位
-    # --------------------------------------------------------
-
-    target_position = calculate_ma_target_position(
-        prices=data["Adj Close"],
-        short_window=SHORT_WINDOW,
-        long_window=LONG_WINDOW,
+    data = load_daily_data(
+        DATA_TICKER
     )
 
-
     # --------------------------------------------------------
-    # 3. 从 Moomoo 模拟账户读取当前 QQQ 仓位
+    # 2. Target Position
     # --------------------------------------------------------
 
-    current_position = get_current_position(
-        TRADE_SYMBOL
+    target_position = (
+        calculate_ma_target_position(
+            prices=data["Adj Close"],
+            short_window=SHORT_WINDOW,
+            long_window=LONG_WINDOW,
+        )
     )
 
+    # --------------------------------------------------------
+    # 3. Current Position
+    # --------------------------------------------------------
+
+    current_position = (
+        get_current_position(
+            TRADE_SYMBOL
+        )
+    )
 
     # --------------------------------------------------------
-    # 4. 比较目标仓位和当前仓位
-    #    生成 BUY / SELL / HOLD
+    # 4. Pending Orders
+    # --------------------------------------------------------
+
+    pending_orders = (
+        get_pending_orders(
+            TRADE_SYMBOL
+        )
+    )
+
+    pending_order_count = len(
+        pending_orders
+    )
+
+    # --------------------------------------------------------
+    # 5. Decision
     # --------------------------------------------------------
 
     action = decide_action(
         target_position=target_position,
         current_position=current_position,
+        pending_orders=pending_orders,
     )
 
-
     # --------------------------------------------------------
-    # 5. 打印策略结果
+    # 6. 状态输出
     # --------------------------------------------------------
 
-    print("=" * 45)
+    print("=" * 50)
     print("MA20 / MA50 Trading Summary")
-    print("=" * 45)
+    print("=" * 50)
 
-    print(f"Symbol           : {TRADE_SYMBOL}")
-    print(f"Short MA         : {SHORT_WINDOW}")
-    print(f"Long MA          : {LONG_WINDOW}")
-    print(f"Target Position  : {target_position}")
-    print(f"Current Position : {current_position}")
-    print(f"Decision         : {action}")
+    print(
+        f"Symbol           : "
+        f"{TRADE_SYMBOL}"
+    )
 
-    print("=" * 45)
+    print(
+        f"Short MA         : "
+        f"{SHORT_WINDOW}"
+    )
 
+    print(
+        f"Long MA          : "
+        f"{LONG_WINDOW}"
+    )
+
+    print(
+        f"Target Position  : "
+        f"{target_position}"
+    )
+
+    print(
+        f"Current Position : "
+        f"{current_position}"
+    )
+
+    print(
+        f"Pending Orders   : "
+        f"{pending_order_count}"
+    )
+
+    print(
+        f"Decision         : "
+        f"{action}"
+    )
+
+    print("=" * 50)
 
     # --------------------------------------------------------
-    # 6. Execution
+    # Pending Order Details
+    # --------------------------------------------------------
+
+    if not pending_orders.empty:
+
+        print("Pending Order Details:")
+
+        print(
+            pending_orders[
+                [
+                    "order_id",
+                    "code",
+                    "trd_side",
+                    "qty",
+                    "dealt_qty",
+                    "price",
+                    "order_status",
+                ]
+            ]
+        )
+
+        print("=" * 50)
+
+    # --------------------------------------------------------
+    # 7. Execution
     # --------------------------------------------------------
 
     if TRADING_ENABLED:
@@ -110,17 +177,20 @@ def main() -> None:
 
     else:
 
-        print("=" * 45)
+        print("=" * 50)
         print("Execution Engine")
-        print("=" * 45)
+        print("=" * 50)
 
-        print("Trading Enabled : False")
+        print(
+            "Trading Enabled : False"
+        )
+
         print(
             "🔒 Trading disabled: "
             "no order will be submitted."
         )
 
-        print("=" * 45)
+        print("=" * 50)
 
 
 # ============================================================

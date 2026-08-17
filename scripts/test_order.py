@@ -26,7 +26,7 @@ CHECK_INTERVAL = 2
 
 # True  = 创建一张新的模拟订单
 # False = 不下新单，只查询 EXISTING_ORDER_ID
-PLACE_NEW_ORDER = False
+PLACE_NEW_ORDER = True
 
 # PLACE_NEW_ORDER=False 时查询这张订单
 EXISTING_ORDER_ID = "687700"
